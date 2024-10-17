@@ -1,0 +1,20 @@
+{
+  "name": "PrestaShop DevContainer",
+  "dockerComposeFile": "../docker-compose.yaml",
+  "service": "prestashop",
+  "workspaceFolder": "/var/www/html",
+  "shutdownAction": "stopCompose",
+  "extensions": ["ms-azuretools.vscode-docker", "esbenp.prettier-vscode"],
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "/bin/bash",
+    "editor.formatOnSave": true
+  },
+  "forwardPorts": [8080, 3306, 8081],
+  "postCreateCommand": "apt-get update && apt-get install -y git && composer install && npm install",
+  "remoteEnv": {
+    "MYSQL_ROOT_PASSWORD": "prestashop",
+    "DB_NAME": "prestashop",
+    "DB_USER": "root",
+    "DB_PASSWD": "admin"
+  }
+}
