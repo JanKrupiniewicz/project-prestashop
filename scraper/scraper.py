@@ -1,59 +1,66 @@
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
-#const
-base_url = 'https://www.toys4boys.pl/17-katalog-wszystkich-produktow?page={}'
+import json
+
+base_url = 'https://www.toys4boys.pl'
+url_template = 'https://www.toys4boys.pl/17-katalog-wszystkich-produktow?page={}'
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) '
+                  'AppleWebKit/537.36 (KHTML, like Gecko) '
+                  'Chrome/81.0.4044.138 Safari/537.36'
+}
 data = []
 
-# Loop through the pages
 for page in range(1, 23):
-    # Send a request to the website
-    response = requests.get(base_url.format(page))
+    response = requests.get(url_template.format(page), headers=headers)
+    if response.status_code != 200:
+        print(f'Failed to retrieve page {page}')
+        continue
 
-    # Check if the request was successful
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.content, 'html.parser')
+    products = soup.find_all('article', class_='ajax_block_product js-product-miniature')
 
-        # Find all product items (adjusted based on the actual HTML structure)
-        products = soup.find_all('div', class_='pro_first_box')
+    for product in products:
 
-        # Check if any products were found
-        if not products:
-            print(f"No products found on page {page}.")
+        product_link_tag = product.find('a', class_='product_img_link')
+        if not product_link_tag:
+            continue
+        product_url = product_link_tag['href']
+
+        if not product_url.startswith('http'):
+            product_url = base_url + product_url
+
+
+        product_response = requests.get(product_url, headers=headers)
+        if product_response.status_code != 200:
+            print(f'Failed to retrieve product page: {product_url}')
+            continue
+        product_soup = BeautifulSoup(product_response.content, 'html.parser')
+
+
+        title_tag = product_soup.find('h1', itemprop='name')
+        title = title_tag.get_text(strip=True) if title_tag else 'No Title'
+
+
+        price_tag = product_soup.find('span', itemprop='price')
+        if price_tag and 'content' in price_tag.attrs:
+            price = price_tag['content']
         else:
-            for product in products:
-                # Extract title
-                title_tag = product.find('a', title=True)
-                title = title_tag['title'] if title_tag else 'null'
+            price = price_tag.get_text(strip=True) if price_tag else 'No Price'
 
-                # Extract image URL
-                img_tag = product.find('img', class_='front-image')
-                img_url = img_tag['data-src'] if img_tag and 'data-src' in img_tag.attrs else 'null'
 
-                # # Extract description
-                # desc_tag = product.find('div', class_='product-description')
-                # desc = desc_tag.get_text(strip=True) if desc_tag else 'null'
+        image_meta = product_soup.find('meta', itemprop='image')
+        image_url = image_meta['content'] if image_meta and 'content' in image_meta.attrs else 'No Image URL'
 
-                # Extract price
-                # price_tag = product.find('span', class_='price', itemprop='price')
-                # price = price_tag['content'] if price_tag and 'content' in price_tag.attrs else 'null'
-                #
-                # # Extract attributes
-                # attr_tag = product.find('div', class_='st_read_more_box')
-                # attributes = [li.get_text(strip=True) for li in attr_tag.find_all('li')] if attr_tag else 'null'
 
-                # Append the data
-                data.append({
-                    'title': title,
-                    'image_url': img_url,
-                    # 'description': desc,
-                    # 'price': price,
-                    # 'attributes': attributes
-                })
-    else:
-        print(f"Failed to retrieve page {page}. Status code: {response.status_code}")
+        data.append({
+            'title': title,
+            'price': price,
+            'image_url': image_url
+        })
 
-# Create a DataFrame and save to CSV
-df = pd.DataFrame(data)
-df.to_csv('products.csv', index=False)
-print(f"{len(data)} products found and saved to products.csv.")
+
+with open('products.json', 'w', encoding='utf-8') as f:
+    json.dump(data, f, ensure_ascii=False, indent=4)
+
+print(f"{len(data)} products found and saved to products.json.")
