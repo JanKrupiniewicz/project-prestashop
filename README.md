@@ -15,3 +15,4 @@ Copy of the existing website made using PrestaShop https://www.toys4boys.pl/
 - Docker
 - MySQL
 - PHP
+- Python
