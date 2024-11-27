@@ -1,13 +1,13 @@
 # Prestashop Project
 
-Copy of the existing website made using PrestaShop https://www.toys4boys.pl/
+Copy of the existing website made using PrestaShop [toys4boys.pl](https://www.toys4boys.pl/)
 
 ## Authors
 
-- @RuvikRubik
-- @arasniewiczMarcin
-- @HubGitPL
-- @JanKrupiniewicz
+- [Bartosz Kolberg ](https://github.com/RuvikRubik)
+- [Marcin Araśniewicz](https://github.com/arasniewiczMarcin)
+- [Mateusz Fydrych](https://github.com/HubGitPL)
+- [Jan Krupiniewicz](https://github.com/JanKrupiniewicz)
 
 ## Technologies
 
