@@ -3,16 +3,20 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
 import random
 import faker
 
 SHOP = 'http://localhost:8080/pl/'
+BUCKET_LIST = 'http://localhost:8080/pl/koszyk?action=show'
+CREATE_ACCOUNT = 'http://localhost:8080/en/login?create_account=1'
+VIEW_ORDER = 'http://localhost:8080/en/order'
+ORDER_HISTORY = 'http://localhost:8080/en/order-history'
+
 CATEGORIES = ['http://localhost:8080/pl/7-stationery', 'http://localhost:8080/pl/8-home-accessories']
 PRODUCTS_NUMBER = 5
 SEARCH_PRODUCT = 'Mug'
 
-def add_product(driver, quantity):
+def add_product(driver: any , quantity: int) -> None:
         qty_input = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.NAME, 'qty'))
         )
@@ -32,7 +36,7 @@ def add_product(driver, quantity):
             EC.visibility_of_element_located((By.CSS_SELECTOR, '.cart-content'))
         )
 
-def add_products_to_cart(driver):
+def add_products_to_cart(driver: any) -> None:
     for category in CATEGORIES:
         driver.get(category)
         
@@ -62,7 +66,7 @@ def add_products_to_cart(driver):
             driver.get(category)
 
 
-def add_product_by_name(driver, name):
+def add_product_by_name(driver: any, name: str) -> None:
     search = driver.find_element(By.NAME, 's')
     search.send_keys(name)
     search.submit()
@@ -89,8 +93,8 @@ def add_product_by_name(driver, name):
         break
 
 
-def delete_picked_products_from_cart(driver):
-    driver.get('http://localhost:8080/pl/koszyk?action=show')
+def delete_picked_products_from_cart(driver: any) -> None:
+    driver.get(BUCKET_LIST)
 
     for _ in range(3):
 
@@ -109,8 +113,8 @@ def delete_picked_products_from_cart(driver):
         )
 
 
-def register_new_account(driver):
-    driver.get('http://localhost:8080/en/login?create_account=1')
+def register_new_account(driver: any) -> None:
+    driver.get(CREATE_ACCOUNT)
 
     username = faker.Faker().name().split(' ')
 
@@ -136,8 +140,8 @@ def register_new_account(driver):
     submit.click()
 
 
-def submit_order(driver):
-    driver.get('http://localhost:8080/en/order')
+def submit_order(driver: any) -> None:
+    driver.get(VIEW_ORDER)
 
     address = driver.find_element(By.NAME, 'address1')
     address.send_keys('Test Street 1')
@@ -166,27 +170,31 @@ def submit_order(driver):
     confirm_payment_button.click()
 
 
-def check_order_details(driver):
-    driver.get('http://localhost:8080/en/order-history');
+def check_order_details(driver: any) -> None:
+    driver.get(ORDER_HISTORY);
 
     order = driver.find_elements(By.CLASS_NAME, 'order-actions')
     order_actions = order[0].find_element(By.TAG_NAME, 'a')
     
     order_actions.click()
 
+def download_order_vat_invoice(driver: any) -> None:
+    pass
 
 
+def __main__():
+    driver = webdriver.Chrome()
+    driver.maximize_window()
+    driver.get(SHOP)
 
-driver = webdriver.Chrome()
-driver.maximize_window()
-driver.get(SHOP)
+    add_products_to_cart(driver)
+    add_product_by_name(driver, SEARCH_PRODUCT)
+    delete_picked_products_from_cart(driver)
 
-# add_products_to_cart(driver)
+    register_new_account(driver)
+    submit_order(driver)
+    check_order_details(driver)
 
-add_product_by_name(driver, SEARCH_PRODUCT)
 
-# delete_picked_products_from_cart(driver)
-
-register_new_account(driver)
-submit_order(driver)
-check_order_details(driver)
+if __name__ == '__main__':
+    __main__()
