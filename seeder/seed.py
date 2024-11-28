@@ -15,7 +15,7 @@ PRODUCTS_API_PATH = BASE_URL + "/products"
 MANUFACTURERS_API_PATH = BASE_URL + "/manufacturers"
 SUPPLIERS_API_PATH = BASE_URL + "/suppliers"
 STOCK_API_PATH = BASE_URL + "/stock_availables"
-
+IMAGE_API_PATH = BASE_URL + "/images/products"
 
 class Category:
     def __init__(self, name: str, env: Environment):
@@ -136,6 +136,7 @@ class PrestashopSeeder:
 
         return subcategory
     
+
     def create_product(self, name: str, price: float, category_id: int, description: str) -> Product:
         product = Product(name, price, category_id, description, self.env)
         product_xml = product.to_xml()
@@ -153,9 +154,11 @@ class PrestashopSeeder:
         product_stock = self.product_stock(product_id)
 
         if not product_stock:
+            print(f'Failed to set stock for product {product_id}')
             return -1
 
         return product
+
     
     def product_stock(self, product_id: int, quantity: int = 100) -> bool:
         template = self.env.get_template('stock.xml')
@@ -181,37 +184,62 @@ class PrestashopSeeder:
 
     def read_json_and_seed(self):
         with open(JSON_DATA_PATH, 'r', encoding='utf-8') as file:
-            categories = json.load(file)
+            data = json.load(file)
 
-        for category_data in categories:
-            category_name = category_data["name"]
-            print(f"Creating category: {category_name}")
-        
+        for category in data.get("categories", []):
+            # Process category
+            category_name = category.get("name")
+            category_url = category.get("url")
 
+            for subcategory in category.get("subcategories", []):
+                # Process subcategory
+                subcategory_name = subcategory.get("name")
+                subcategory_url = subcategory.get("url")
+                print(f"  Subcategory: {subcategory_name}, URL: {subcategory_url}")
+
+                category = self.create_category(subcategory_name)
+
+                for subsubcategory in subcategory.get("subsubcategories", []):
+                    # Process subsubcategory
+                    subsubcategory_name = subsubcategory.get("name")
+                    subsubcategory_url = subsubcategory.get("url")
+                    
+                    self.create_subcategory(subsubcategory_name, category.category_id)
+
+                    for product in subsubcategory.get("products", []):
+                        # Process product
+                        product_id = product.get("product_id")
+                        product_title = product.get("title")
+                        product_price = product.get("price")
+                        product_description = product.get("description")
+                        product_image_url = product.get("image_url")
+
+                        self.create_product(product_title, product_price, category.category_id, product_description)
 
 def main():
     seeder = PrestashopSeeder()
+
     # seeder.read_json_and_seed()
 
-    # categories = ['Clothing', 'Shoes', 'Accessories']
-    # subcategories = ['For Him', 'For Her', 'For Kids']
+    categories = ['Clothing', 'Shoes', 'Accessories']
+    subcategories = ['For Him', 'For Her', 'For Kids']
     products = [
         {
             'name': 'T-shirt',
             'price': 20.0,
-            'category_id': 3,
+            'category_id': 9,
             'description': 'A nice t-shirt'
         },
         {
             'name': 'Sneakers',
             'price': 50.0,
-            'category_id': 3,
+            'category_id': 9,
             'description': 'A nice pair of sneakers'
         },
         {
             'name': 'Hat',
             'price': 10.0,
-            'category_id': 3,
+            'category_id': 9,
             'description': 'A nice hat'
         }
     ]
