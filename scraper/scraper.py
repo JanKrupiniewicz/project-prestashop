@@ -8,10 +8,8 @@ CATALOG_URL_TEMPLATE = 'https://www.toys4boys.pl/17-katalog-wszystkich-produktow
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
 }
-IMAGES_FOLDER = 'images'
+IMAGES_FOLDER = '../scraper-results/images'
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
-
-#TODO taxes
 
 def get_soup(url):
     response = requests.get(url, headers=HEADERS)
@@ -42,23 +40,14 @@ def get_categories():
                     subcategory_url = sub_a['href']
                     subcategory = {
                         'name': subcategory_name,
-                        'url': subcategory_url,
-                        'subsubcategories': []
+                        'url': subcategory_url
                     }
-                    for subsub in sub.select('ul.mu_level_2 > li'):
-                        subsub_a = subsub.find('a')
-                        if subsub_a:
-                            subsubcategory_name = subsub_a.get_text(strip=True)
-                            subsubcategory_url = subsub_a['href']
-                            subcategory['subsubcategories'].append({
-                                'name': subsubcategory_name,
-                                'url': subsubcategory_url
-                            })
                     category['subcategories'].append(subcategory)
 
             categories.append(category)
     return categories
 
+#image file name = productID
 def download_image(image_url, product_id, headers, images_folder):
     if image_url:
         image_extension = os.path.splitext(image_url)[1]
@@ -138,14 +127,8 @@ def main():
             subcategory_url = subcategory['url']
             subcategory_data = scrape_products_from_page(subcategory_url, HEADERS, IMAGES_FOLDER)
             subcategory['products'] = subcategory_data
-            for subsubcategory in subcategory['subsubcategories']:
-                print(f"Processing subsubcategory: {subsubcategory['name']}")
-                subsubcategory_url = subsubcategory['url']
-                subsubcategory_data = scrape_products_from_page(subsubcategory_url, HEADERS, IMAGES_FOLDER)
-                subsubcategory['products'] = subsubcategory_data
 
     catalog_data = []
-    #range is TODO
     for page in range(1, 2):
         catalog_url = CATALOG_URL_TEMPLATE.format(page)
         catalog_data.extend(scrape_products_from_page(catalog_url, HEADERS, IMAGES_FOLDER))
@@ -157,8 +140,6 @@ def main():
 
     with open('products.json', 'w', encoding='utf-8') as f:
         json.dump(all_data, f, ensure_ascii=False, indent=4)
-
-
 
 if __name__ == '__main__':
     main()
