@@ -171,7 +171,7 @@ def submit_order(driver: any) -> None:
 
 
 def check_order_details(driver: any) -> None:
-    driver.get(ORDER_HISTORY);
+    driver.get(ORDER_HISTORY)
 
     order = driver.find_elements(By.CLASS_NAME, 'order-actions')
     order_actions = order[0].find_element(By.TAG_NAME, 'a')
@@ -179,7 +179,12 @@ def check_order_details(driver: any) -> None:
     order_actions.click()
 
 def download_order_vat_invoice(driver: any) -> None:
-    pass
+    driver.get(ORDER_HISTORY)
+
+    order = driver.find_elements(By.CLASS_NAME, 'hidden-md-down')
+    order_actions = order[3].find_element(By.TAG_NAME, 'a')
+
+    order_actions.click()
 
 
 def __main__():
@@ -194,7 +199,7 @@ def __main__():
     register_new_account(driver)
     submit_order(driver)
     check_order_details(driver)
-
+    download_order_vat_invoice(driver)
 
 if __name__ == '__main__':
     __main__()
