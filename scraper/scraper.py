@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import os
+import re
 
 BASE_URL = 'https://www.toys4boys.pl'
 CATALOG_URL_TEMPLATE = 'https://www.toys4boys.pl/17-katalog-wszystkich-produktow?page={}'
@@ -100,7 +101,12 @@ def scrape_products_from_page(url, headers, images_folder):
             price = price_tag.get_text(strip=True) if price_tag else 'No Price'
 
         description_tag = product_soup.find('div', itemprop='description')
-        description = description_tag.get_text(strip=True) if description_tag else 'No Description'
+        if description_tag:
+            description = description_tag.get_text(strip=True)
+            description = re.sub(r'Czytaj więcej', '', description)
+            description = re.sub(r'Pokaż mniej', '', description)
+        else:
+            description = 'No Description'
 
         image_meta = product_soup.find('meta', itemprop='image')
         image_url = image_meta['content'] if image_meta and 'content' in image_meta.attrs else None
