@@ -128,14 +128,14 @@ def main():
             subcategory_data = scrape_products_from_page(subcategory_url, HEADERS, IMAGES_FOLDER)
             subcategory['products'] = subcategory_data
 
-    catalog_data = []
-    for page in range(1, 2):
-        catalog_url = CATALOG_URL_TEMPLATE.format(page)
-        catalog_data.extend(scrape_products_from_page(catalog_url, HEADERS, IMAGES_FOLDER))
+    # catalog_data = []
+    # for page in range(1, 2):
+    #     catalog_url = CATALOG_URL_TEMPLATE.format(page)
+    #     catalog_data.extend(scrape_products_from_page(catalog_url, HEADERS, IMAGES_FOLDER))
 
     all_data.append({
-        'categories': categories,
-        'catalog': catalog_data
+        'categories': categories
+        # 'catalog': catalog_data
     })
 
     with open('products.json', 'w', encoding='utf-8') as f:
