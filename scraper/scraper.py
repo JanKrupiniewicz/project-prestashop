@@ -3,13 +3,16 @@ from bs4 import BeautifulSoup
 import json
 import os
 import re
+from urllib.parse import urljoin
 
 BASE_URL = 'https://www.toys4boys.pl'
+# test URL
 CATALOG_URL_TEMPLATE = 'https://www.toys4boys.pl/17-katalog-wszystkich-produktow?page={}'
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
 }
 IMAGES_FOLDER = '../scraper-results/images'
+NAME_OF_JSON_FILE = 'products.json'
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
 NUMBER_OF_CATEGORIES = 4
 NUMBER_OF_SUBCATEGORIES = 2
@@ -108,18 +111,38 @@ def scrape_products_from_page(url, headers, images_folder):
         else:
             description = 'No Description'
 
-        image_meta = product_soup.find('meta', itemprop='image')
-        image_url = image_meta['content'] if image_meta and 'content' in image_meta.attrs else None
+        image_urls = []
+        image_gallery = product_soup.find("div", class_="pro_gallery_top")
+        if image_gallery:
+            images = image_gallery.find_all("img", class_="pro_gallery_item", limit=2)
+            for img in images:
+                img_url = img.get("data-src")
+                if img_url and "miniature" not in img_url:
+                    full_img_url = urljoin(product_url, img_url)
+                    image_urls.append(full_img_url)
 
-        image_filename = download_image(image_url, product_id, headers, images_folder)
+        if len(image_urls) < 2:
+            additional_images = product_soup.find_all("img", itemprop="image", limit=2)
+            for img in additional_images:
+                img_url = img.get("content")
+                if img_url and "miniature" not in img_url:
+                    full_img_url = urljoin(product_url, img_url)
+                    if full_img_url not in image_urls:
+                        image_urls.append(full_img_url)
+                if len(image_urls) >= 2:
+                    break
+
+        image_filenames = []
+        for idx, img_url in enumerate(image_urls):
+            image_filenames.append(download_image(img_url, f"{product_id}_{idx}", headers, images_folder))
 
         data.append({
             'product_id': product_id,
             'title': title,
             'price': price,
             'description': description,
-            'image_url': image_url,
-            'image_file': image_filename
+            'image_urls': image_urls,
+            'image_files': image_filenames
         })
     return data
 
@@ -139,7 +162,7 @@ def main():
         'categories': categories
     })
 
-    with open('products.json', 'w', encoding='utf-8') as f:
+    with open(NAME_OF_JSON_FILE, 'w', encoding='utf-8') as f:
         json.dump(all_data, f, ensure_ascii=False, indent=4)
 
 if __name__ == '__main__':
