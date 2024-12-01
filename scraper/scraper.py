@@ -10,19 +10,21 @@ HEADERS = {
 }
 IMAGES_FOLDER = '../scraper-results/images'
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
+NUMBER_OF_CATEGORIES = 4
+NUMBER_OF_SUBCATEGORIES = 2
 
-def get_soup(url):
+def get_content(url):
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     return BeautifulSoup(response.content, 'lxml')
 
 def get_categories():
-    print('Fetching categories')
-    soup = get_soup(BASE_URL)
+    print('Starting to fetch categories')
+    soup = get_content(BASE_URL)
     categories = []
     menu = soup.select('ul.st_mega_menu > li')
 
-    for li in menu:
+    for li in menu[:NUMBER_OF_CATEGORIES]:
         category = {}
         category_a = li.find('a')
         if category_a:
@@ -33,7 +35,7 @@ def get_categories():
             category['subcategories'] = []
 
             subcategories = li.select('ul.mu_level_1 > li')
-            for sub in subcategories:
+            for sub in subcategories[:NUMBER_OF_SUBCATEGORIES]:
                 sub_a = sub.find('a')
                 if sub_a:
                     subcategory_name = sub_a.get_text(strip=True)
@@ -47,7 +49,6 @@ def get_categories():
             categories.append(category)
     return categories
 
-#image file name = productID
 def download_image(image_url, product_id, headers, images_folder):
     if image_url:
         image_extension = os.path.splitext(image_url)[1]
@@ -128,14 +129,8 @@ def main():
             subcategory_data = scrape_products_from_page(subcategory_url, HEADERS, IMAGES_FOLDER)
             subcategory['products'] = subcategory_data
 
-    # catalog_data = []
-    # for page in range(1, 2):
-    #     catalog_url = CATALOG_URL_TEMPLATE.format(page)
-    #     catalog_data.extend(scrape_products_from_page(catalog_url, HEADERS, IMAGES_FOLDER))
-
     all_data.append({
         'categories': categories
-        # 'catalog': catalog_data
     })
 
     with open('products.json', 'w', encoding='utf-8') as f:
