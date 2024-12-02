@@ -73,7 +73,7 @@ def scrape_products_from_page(url, headers, images_folder):
     data = []
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print(f'Failed to retrieve page: {url}')
+        print(f'Failed to find page: {url}')
         return data
 
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -146,6 +146,25 @@ def scrape_products_from_page(url, headers, images_folder):
         })
     return data
 
+def get_all_pages_in_subcategory(subcategory_url):
+    page_number = 1
+    all_products = []
+
+    while True:
+        if page_number == 1:
+            page_url = subcategory_url
+        else:
+            page_url = f"{subcategory_url}?page={page_number}"
+
+        products = scrape_products_from_page(page_url, HEADERS, IMAGES_FOLDER)
+        if not products:
+            break
+
+        all_products.extend(products)
+        page_number += 1
+
+    return all_products
+
 def main():
     categories = get_categories()
     all_data = []
@@ -155,7 +174,7 @@ def main():
         for subcategory in category['subcategories']:
             print(f"Processing subcategory: {subcategory['name']}")
             subcategory_url = subcategory['url']
-            subcategory_data = scrape_products_from_page(subcategory_url, HEADERS, IMAGES_FOLDER)
+            subcategory_data = get_all_pages_in_subcategory(subcategory_url)
             subcategory['products'] = subcategory_data
 
     all_data.append({
