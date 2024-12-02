@@ -2,29 +2,33 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import os
+import re
+from urllib.parse import urljoin
 
 BASE_URL = 'https://www.toys4boys.pl'
+# test URL
 CATALOG_URL_TEMPLATE = 'https://www.toys4boys.pl/17-katalog-wszystkich-produktow?page={}'
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
 }
-IMAGES_FOLDER = 'images'
+IMAGES_FOLDER = '../scraper-results/images'
+NAME_OF_JSON_FILE = 'products.json'
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
+NUMBER_OF_CATEGORIES = 4
+NUMBER_OF_SUBCATEGORIES = 2
 
-#TODO taxes
-
-def get_soup(url):
+def get_content(url):
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     return BeautifulSoup(response.content, 'lxml')
 
 def get_categories():
-    print('Fetching categories')
-    soup = get_soup(BASE_URL)
+    print('Starting to fetch categories')
+    soup = get_content(BASE_URL)
     categories = []
     menu = soup.select('ul.st_mega_menu > li')
 
-    for li in menu:
+    for li in menu[:NUMBER_OF_CATEGORIES]:
         category = {}
         category_a = li.find('a')
         if category_a:
@@ -35,25 +39,15 @@ def get_categories():
             category['subcategories'] = []
 
             subcategories = li.select('ul.mu_level_1 > li')
-            for sub in subcategories:
+            for sub in subcategories[:NUMBER_OF_SUBCATEGORIES]:
                 sub_a = sub.find('a')
                 if sub_a:
                     subcategory_name = sub_a.get_text(strip=True)
                     subcategory_url = sub_a['href']
                     subcategory = {
                         'name': subcategory_name,
-                        'url': subcategory_url,
-                        'subsubcategories': []
+                        'url': subcategory_url
                     }
-                    for subsub in sub.select('ul.mu_level_2 > li'):
-                        subsub_a = subsub.find('a')
-                        if subsub_a:
-                            subsubcategory_name = subsub_a.get_text(strip=True)
-                            subsubcategory_url = subsub_a['href']
-                            subcategory['subsubcategories'].append({
-                                'name': subsubcategory_name,
-                                'url': subsubcategory_url
-                            })
                     category['subcategories'].append(subcategory)
 
             categories.append(category)
@@ -79,7 +73,7 @@ def scrape_products_from_page(url, headers, images_folder):
     data = []
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print(f'Failed to retrieve page: {url}')
+        print(f'Failed to find page: {url}')
         return data
 
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -110,22 +104,66 @@ def scrape_products_from_page(url, headers, images_folder):
             price = price_tag.get_text(strip=True) if price_tag else 'No Price'
 
         description_tag = product_soup.find('div', itemprop='description')
-        description = description_tag.get_text(strip=True) if description_tag else 'No Description'
+        if description_tag:
+            description = description_tag.get_text(strip=True)
+            description = re.sub(r'Czytaj więcej', '', description)
+            description = re.sub(r'Pokaż mniej', '', description)
+        else:
+            description = 'No Description'
 
-        image_meta = product_soup.find('meta', itemprop='image')
-        image_url = image_meta['content'] if image_meta and 'content' in image_meta.attrs else None
+        image_urls = []
+        image_gallery = product_soup.find("div", class_="pro_gallery_top")
+        if image_gallery:
+            images = image_gallery.find_all("img", class_="pro_gallery_item", limit=2)
+            for img in images:
+                img_url = img.get("data-src")
+                if img_url and "miniature" not in img_url:
+                    full_img_url = urljoin(product_url, img_url)
+                    image_urls.append(full_img_url)
 
-        image_filename = download_image(image_url, product_id, headers, images_folder)
+        if len(image_urls) < 2:
+            additional_images = product_soup.find_all("img", itemprop="image", limit=2)
+            for img in additional_images:
+                img_url = img.get("content")
+                if img_url and "miniature" not in img_url:
+                    full_img_url = urljoin(product_url, img_url)
+                    if full_img_url not in image_urls:
+                        image_urls.append(full_img_url)
+                if len(image_urls) >= 2:
+                    break
+
+        image_filenames = []
+        for idx, img_url in enumerate(image_urls):
+            image_filenames.append(download_image(img_url, f"{product_id}_{idx}", headers, images_folder))
 
         data.append({
             'product_id': product_id,
             'title': title,
             'price': price,
             'description': description,
-            'image_url': image_url,
-            'image_file': image_filename
+            'image_urls': image_urls,
+            'image_files': image_filenames
         })
     return data
+
+def get_all_pages_in_subcategory(subcategory_url):
+    page_number = 1
+    all_products = []
+
+    while True:
+        if page_number == 1:
+            page_url = subcategory_url
+        else:
+            page_url = f"{subcategory_url}?page={page_number}"
+
+        products = scrape_products_from_page(page_url, HEADERS, IMAGES_FOLDER)
+        if not products:
+            break
+
+        all_products.extend(products)
+        page_number += 1
+
+    return all_products
 
 def main():
     categories = get_categories()
@@ -136,29 +174,15 @@ def main():
         for subcategory in category['subcategories']:
             print(f"Processing subcategory: {subcategory['name']}")
             subcategory_url = subcategory['url']
-            subcategory_data = scrape_products_from_page(subcategory_url, HEADERS, IMAGES_FOLDER)
+            subcategory_data = get_all_pages_in_subcategory(subcategory_url)
             subcategory['products'] = subcategory_data
-            for subsubcategory in subcategory['subsubcategories']:
-                print(f"Processing subsubcategory: {subsubcategory['name']}")
-                subsubcategory_url = subsubcategory['url']
-                subsubcategory_data = scrape_products_from_page(subsubcategory_url, HEADERS, IMAGES_FOLDER)
-                subsubcategory['products'] = subsubcategory_data
-
-    catalog_data = []
-    #range is TODO
-    for page in range(1, 2):
-        catalog_url = CATALOG_URL_TEMPLATE.format(page)
-        catalog_data.extend(scrape_products_from_page(catalog_url, HEADERS, IMAGES_FOLDER))
 
     all_data.append({
-        'categories': categories,
-        'catalog': catalog_data
+        'categories': categories
     })
 
-    with open('products.json', 'w', encoding='utf-8') as f:
+    with open(NAME_OF_JSON_FILE, 'w', encoding='utf-8') as f:
         json.dump(all_data, f, ensure_ascii=False, indent=4)
-
-
 
 if __name__ == '__main__':
     main()
