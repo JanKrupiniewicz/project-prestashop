@@ -12,12 +12,13 @@ services:
       - prestashop_network
   prestashop:
     container_name: prestashop
-    image: prestashop/prestashop:1.7.8.8
+    image: marciascfc/ssl
     restart: unless-stopped
     depends_on:
       - mysql
     ports:
       - 8080:80
+      - 443:443
     environment:
       DB_SERVER: some-mysql
       DB_NAME: prestashop
