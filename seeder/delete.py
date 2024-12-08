@@ -1,8 +1,9 @@
 import requests
 import xml.etree.ElementTree as ET
 
-WEBSERVICE_KEY = '7ZQLZDMNR4HDF783E5EAF32PH5LXYCK9'
+WEBSERVICE_KEY = 'N8WWMLMWBALQC2S2LMUA4AJKP7Z3H6LD'
 BASE_URL = 'http://localhost:8080/api/'
+
 
 class PrestashopWebService:
     def __init__(self):
@@ -31,10 +32,10 @@ class PrestashopWebService:
             return False
 
         return True
-    
+
     def delete_category(self, id: int) -> bool:
         return self.delete_resource('categories', id)
-    
+
     def delete_product(self, id: int) -> bool:
         return self.delete_resource('products', id)
 
@@ -57,7 +58,6 @@ class PrestashopWebService:
 
         return id
 
-        
     def get_products(self):
         url = f'{BASE_URL}/products'
 
@@ -66,7 +66,7 @@ class PrestashopWebService:
         if response.status_code != 200:
             print(f'Failed to retrieve products: {response.text}')
             return []
-        
+
         root = ET.fromstring(response.text)
         products = root.findall('products/product')
         id = []
@@ -76,11 +76,12 @@ class PrestashopWebService:
             id.append(product_id)
 
         return id
-    
+
 
 def main():
     ps = PrestashopWebService()
     ps.delete_sample_data()
+
 
 if __name__ == '__main__':
     main()
