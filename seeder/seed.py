@@ -138,6 +138,8 @@ class PrestashopSeeder:
         return subcategory
 
     def create_product(self, name: str, price: float, category_id: int, description: str, product_image) -> Product:
+        price = float(price) / 1.23
+        price = round(price, 2)
         product = Product(name, price, category_id, description, self.env)
         product_xml = product.to_xml()
 

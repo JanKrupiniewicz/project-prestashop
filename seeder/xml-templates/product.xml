@@ -4,6 +4,7 @@
         <ean13><![CDATA[{{ ean13 }}]]></ean13>
         <id_category_default><![CDATA[{{ category_id }}]]></id_category_default>
         <id_shop_default><![CDATA[1]]></id_shop_default>
+        <id_tax_rules_group><![CDATA[1]]></id_tax_rules_group>
         <minimal_quantity>1</minimal_quantity>
         <additional_delivery_times>1</additional_delivery_times>
         <available_for_order>1</available_for_order>
