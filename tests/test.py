@@ -6,15 +6,15 @@ from selenium.webdriver.support import expected_conditions as EC
 import random
 import faker
 
-SHOP = 'http://localhost:8080/pl/'
-BUCKET_LIST = 'http://localhost:8080/pl/koszyk?action=show'
-CREATE_ACCOUNT = 'http://localhost:8080/en/login?create_account=1'
-VIEW_ORDER = 'http://localhost:8080/en/order'
-ORDER_HISTORY = 'http://localhost:8080/en/order-history'
+SHOP = 'https://localhost'
+BUCKET_LIST = 'https://localhost/koszyk?action=show'
+CREATE_ACCOUNT = 'https://localhost/logowanie?create_account=1'
+VIEW_ORDER = 'https://localhost/zamówienie'
+ORDER_HISTORY = 'https://localhost/historia-zamowien'
 
-CATEGORIES = ['http://localhost:8080/pl/7-stationery', 'http://localhost:8080/pl/8-home-accessories']
+CATEGORIES = ['https://localhost/28-dla-niej', 'https://localhost/34-dla-dziecka']
 PRODUCTS_NUMBER = 5
-SEARCH_PRODUCT = 'Mug'
+SEARCH_PRODUCT = 'Mag'
 
 def add_product(driver: any , quantity: int) -> None:
         qty_input = WebDriverWait(driver, 10).until(
