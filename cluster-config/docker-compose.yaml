@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  prestashop:
+    image: jkrupiniewicz/prestashop-cluster
+    container_name: prestashop
+    ports:
+      - "18885:443"
+    depends_on:
+      - memcached
+    environment:
+      PS_INSTALL_AUTO: "1"
+      DB_USER: "root"
+      DB_PASSWD: "student"
+      DB_SERVER: "admin-mysql_db"
+      DB_NAME: "BE_188857"
+      PS_DOMAIN: "localhost:18885"
+      PS_COUNTRY: "PL"
+      PS_LANGUAGE: "pl"
+      MEMCACHED_SERVER: "memcached"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 2
+        window: 60s
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    entrypoint: init_db.sh
+
+  memcached:
+    image: memcached:latest
+    container_name: memcached
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 2
+        window: 140s
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    networks:
+      - admin-mysql_default
+
+networks:
+  admin-mysql_default:
+    external: true

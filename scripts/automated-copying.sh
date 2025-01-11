@@ -24,7 +24,7 @@ git add $DEST_FOLDER/
 
 git commit -m "Automatic update from project-prestashop-html repo"
 
-git push origin main
+git push origin pipeline
 
 rm -rf $TEMP_DIR
 
