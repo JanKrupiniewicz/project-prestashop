@@ -12,19 +12,22 @@ DEST_REPO="https://<TOKEN>@github.com/JanKrupiniewicz/project-prestashop.git"
 DEST_FOLDER="prestashop"
 TEMP_DIR=$(mktemp -d)
 
-git clone $SOURCE_REPO $TEMP_DIR/source
+BRANCH_NAME="update-prestashop-files"
 
+git clone $SOURCE_REPO $TEMP_DIR/source
 git clone $DEST_REPO $TEMP_DIR/destination
 
 cp -r $TEMP_DIR/source/* $TEMP_DIR/destination/$DEST_FOLDER/
 
 cd $TEMP_DIR/destination
 
+git checkout -b $BRANCH_NAME
+
 git add $DEST_FOLDER/
 
 git commit -m "Automatic update from project-prestashop-html repo"
 
-git push origin pipeline
+git push origin $BRANCH_NAME
 
 rm -rf $TEMP_DIR
 
