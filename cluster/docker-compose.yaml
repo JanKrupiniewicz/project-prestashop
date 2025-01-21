@@ -2,21 +2,19 @@ version: "3.9"
 
 services:
   prestashop:
-    image: jkrupiniewicz/prestashop-cluster
-    container_name: prestashop
+    image: jkrupiniewicz/be-toys4boys:0.1.0
     ports:
       - "18885:443"
-    depends_on:
-      - memcached
+    #depends_on:
+    #  - memcached
     environment:
-      PS_INSTALL_AUTO: "1"
       DB_USER: "root"
       DB_PASSWD: "student"
       DB_SERVER: "admin-mysql_db"
+      DB_HOST: "admin-mysql_db"
       DB_NAME: "BE_188857"
       PS_DOMAIN: "localhost:18885"
-      PS_COUNTRY: "PL"
-      PS_LANGUAGE: "pl"
+      PS_INSTALL_AUTO: 0
       MEMCACHED_SERVER: "memcached"
     deploy:
       restart_policy:
@@ -27,12 +25,12 @@ services:
       resources:
         limits:
           cpus: "0.5"
-          memory: 512M
-    entrypoint: init_db.sh
+    networks:
+      - admin-mysql_default
+      - prestashop_network
 
   memcached:
     image: memcached:latest
-    container_name: memcached
     deploy:
       restart_policy:
         condition: on-failure
@@ -42,10 +40,11 @@ services:
       resources:
         limits:
           cpus: "0.5"
-          memory: 256M
     networks:
       - admin-mysql_default
+      - prestashop_network
 
 networks:
+  prestashop_network:
   admin-mysql_default:
     external: true
