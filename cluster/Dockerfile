@@ -1,6 +1,6 @@
 # jkrupiniewicz/be-toys4boys:0.1.x
 
-FROM bartoszkol/my-image:0.0.6
+FROM bartoszkol/my-image:0.0.7
 
 RUN apt-get update && apt-get install -y gettext-base
 
